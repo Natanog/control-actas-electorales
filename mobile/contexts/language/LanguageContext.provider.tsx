@@ -1,14 +1,14 @@
 import { createContext, useContext } from "react";
 import i18n from "../../common/config/i18n";
 
-export type Language = "az" | "bg" | "en" | "es" | "hy" | "ka" | "pl" | "ro" | "ru" | "sr" | "de";
+export type Language = "az" | "bg" | "en" | "es" | "hy" | "ka" | "pl" | "ro" | "ru" | "sr" | "de" | "pt-BR";
 
 type LanguageContextType = {
   changeLanguage: (language: Language) => void;
 };
 
 export const LanguageContext = createContext<LanguageContextType>({
-  changeLanguage: (_language: Language) => {},
+  changeLanguage: (_language: Language) => { },
 });
 
 const LanguageContextProvider = ({ children }: React.PropsWithChildren) => {

@@ -31,6 +31,8 @@ export const getElectionRounds = (): Promise<ElectionRoundVM[]> => {
 */
 export type PollingStationNomenclatorNodeAPIResponse = {
   id: number;
+  latitude?: number;
+  longitude?: number;
   name: string;
   parentId?: number; // available for the leafs
   number?: string; // available for the leafs
