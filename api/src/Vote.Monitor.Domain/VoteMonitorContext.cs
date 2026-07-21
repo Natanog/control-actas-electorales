@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Vote.Monitor.Domain.Constants;
+using Vote.Monitor.Domain.Entities.ActaAggregate;
 using Vote.Monitor.Domain.Entities.AttachmentAggregate;
 using Vote.Monitor.Domain.Entities.CitizenGuideAggregate;
 using Vote.Monitor.Domain.Entities.CitizenNotificationAggregate;
@@ -36,9 +37,7 @@ namespace Vote.Monitor.Domain;
 
 public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
-    public VoteMonitorContext(DbContextOptions<VoteMonitorContext> options) : base(options)
-    {
-    }
+    public VoteMonitorContext(DbContextOptions<VoteMonitorContext> options) : base(options) { }
 
     public DbSet<Country> Countries { get; set; }
     public DbSet<Ngo> Ngos { get; set; }
@@ -59,6 +58,8 @@ public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRol
     public DbSet<NotificationToken> NotificationTokens { set; get; }
     public DbSet<Notification> Notifications { set; get; }
     public DbSet<Attachment> Attachments { set; get; }
+    public DbSet<Acta> Actas { set; get; }
+    public DbSet<ActaResultEntry> ActaResultEntries { set; get; }
     public DbSet<Note> Notes { set; get; }
     public DbSet<NotificationStub> NotificationStubs { get; set; }
     public DbSet<ExportedData> ExportedData { get; set; }
@@ -72,7 +73,6 @@ public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRol
     public DbSet<MonitoringObserverNotification> MonitoringObserverNotification { get; set; }
     public DbSet<CitizenGuide> CitizenGuides { get; set; }
     public DbSet<Location> Locations { get; set; }
-
     public DbSet<IncidentReport> IncidentReports { get; set; }
     public DbSet<IncidentReportNote> IncidentReportNotes { get; set; }
     public DbSet<IncidentReportAttachment> IncidentReportAttachments { get; set; }
@@ -85,43 +85,17 @@ public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRol
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
         builder.HasPostgresExtension("uuid-ossp");
-
-        var jsonbObjectKeys = typeof(Postgres.Functions)
-            .GetRuntimeMethod(nameof(Postgres.Functions.ObjectKeys), new[] { typeof(JsonDocument) });
-
-        var unnest = typeof(Postgres.Functions)
-            .GetRuntimeMethod(nameof(Postgres.Functions.Unnest), new[] { typeof(string[]) });
-
-        var arrayUnique = typeof(Postgres.Functions)
-            .GetRuntimeMethod(nameof(Postgres.Functions.ArrayUnique), new[] { typeof(string[]) });
-
-        var arrayRemove = typeof(Postgres.Functions)
-            .GetRuntimeMethod(nameof(Postgres.Functions.ArrayRemove), new[] { typeof(string[]), typeof(string) });
-
-        var arrayDiff = typeof(Postgres.Functions)
-            .GetRuntimeMethod(nameof(Postgres.Functions.ArrayDiff), new[] { typeof(string[]), typeof(string[]) });
-
-        builder
-            .HasDbFunction(jsonbObjectKeys!)
-            .HasName("jsonb_object_keys");
-
-        builder
-            .HasDbFunction(unnest!)
-            .HasName("unnest");
-
-        builder
-            .HasDbFunction(arrayUnique!)
-            .HasName(CustomDBFunctions.ArrayUnique);
-
-        builder
-            .HasDbFunction(arrayRemove!)
-            .HasName("array_remove");
-
-        builder
-            .HasDbFunction(arrayDiff!)
-            .HasName(CustomDBFunctions.ArrayDiff);
+        var jsonbObjectKeys = typeof(Postgres.Functions).GetRuntimeMethod(nameof(Postgres.Functions.ObjectKeys), new[] { typeof(JsonDocument) });
+        var unnest = typeof(Postgres.Functions).GetRuntimeMethod(nameof(Postgres.Functions.Unnest), new[] { typeof(string[]) });
+        var arrayUnique = typeof(Postgres.Functions).GetRuntimeMethod(nameof(Postgres.Functions.ArrayUnique), new[] { typeof(string[]) });
+        var arrayRemove = typeof(Postgres.Functions).GetRuntimeMethod(nameof(Postgres.Functions.ArrayRemove), new[] { typeof(string[]), typeof(string) });
+        var arrayDiff = typeof(Postgres.Functions).GetRuntimeMethod(nameof(Postgres.Functions.ArrayDiff), new[] { typeof(string[]), typeof(string[]) });
+        builder.HasDbFunction(jsonbObjectKeys!).HasName("jsonb_object_keys");
+        builder.HasDbFunction(unnest!).HasName("unnest");
+        builder.HasDbFunction(arrayUnique!).HasName(CustomDBFunctions.ArrayUnique);
+        builder.HasDbFunction(arrayRemove!).HasName("array_remove");
+        builder.HasDbFunction(arrayDiff!).HasName(CustomDBFunctions.ArrayDiff);
 
         builder.ApplyConfiguration(new ApplicationUserConfiguration());
         builder.ApplyConfiguration(new NgoAdminConfiguration());
@@ -138,6 +112,8 @@ public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRol
         builder.ApplyConfiguration(new NotificationConfiguration());
         builder.ApplyConfiguration(new NotificationTokenConfiguration());
         builder.ApplyConfiguration(new AttachmentConfiguration());
+        builder.ApplyConfiguration(new ActaConfiguration());
+        builder.ApplyConfiguration(new ActaResultEntryConfiguration());
         builder.ApplyConfiguration(new NoteConfiguration());
         builder.ApplyConfiguration(new PollingStationInformationFormConfiguration());
         builder.ApplyConfiguration(new PollingStationInformationConfiguration());
@@ -148,19 +124,15 @@ public class VoteMonitorContext : IdentityDbContext<ApplicationUser, IdentityRol
         builder.ApplyConfiguration(new NotificationStubConfiguration());
         builder.ApplyConfiguration(new ExportedDataConfiguration());
         builder.ApplyConfiguration(new QuickReportConfiguration());
-
         builder.ApplyConfiguration(new CitizenReportConfiguration());
         builder.ApplyConfiguration(new CitizenReportNoteConfiguration());
         builder.ApplyConfiguration(new CitizenReportAttachmentConfiguration());
         builder.ApplyConfiguration(new CitizenGuideConfiguration());
         builder.ApplyConfiguration(new CitizenNotificationConfiguration());
-
         builder.ApplyConfiguration(new IncidentReportConfiguration());
         builder.ApplyConfiguration(new IncidentReportNoteConfiguration());
         builder.ApplyConfiguration(new IncidentReportAttachmentConfiguration());
-
         builder.ApplyConfiguration(new LocationConfiguration());
-
         builder.ApplyConfiguration(new CoalitionConfiguration());
         builder.ApplyConfiguration(new CoalitionMembershipConfiguration());
         builder.ApplyConfiguration(new CoalitionFormAccessConfiguration());
