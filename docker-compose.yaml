@@ -10,11 +10,32 @@ services:
     container_name: votemonitorapi
     env_file:
       - .env
+    environment:
+      ACTA_OCR_ENABLED: "true"
+      ACTA_OCR_BASE_URL: "http://acta-ocr:8000"
+      ACTA_OCR_REVIEW_THRESHOLD: "0.85"
     ports:
       - "5000:8080"
     depends_on:
       db:
         condition: service_started
+      acta-ocr:
+        condition: service_healthy
+
+  acta-ocr:
+    build:
+      context: services/acta-ocr
+      dockerfile: Dockerfile
+    container_name: acta-ocr
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   posgress_ui:
     image: dpage/pgadmin4
@@ -57,7 +78,7 @@ services:
       MP_DATA_FILE: /data/mailpit.db
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
-  
+
   hangfire:
     image: votemonitorhangfire
     build:
@@ -80,21 +101,16 @@ services:
     container_name: minio
     restart: always
     ports:
-      - "9000:9000"  # MinIO API port
-      - "9001:9001"  # MinIO Console UI
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     env_file:
       - .env
     command: server /data --console-address ":9001"
+
 volumes:
   db-data:
     driver: local
   minio_data:
     driver: local
-    
-# docker-compose up -d
-# docker-compose down
-# docker-compose ps
-# docker-compose logs
-# docker inspect <containerid>  - inspect postgress to get the ip address , la mine ii 172.20.0.2
